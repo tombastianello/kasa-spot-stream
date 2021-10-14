@@ -7,4 +7,4 @@ Running this application only requires 3 environment variables:
 - `KASA_PASSWORD`: Your TP-Link Kasa password.
 - `SPOT_IP`: The local network IP address of your Spot Camera.
 
-More detailed documentation to come soon. Please note that this is still a work in progress and will likely break.
+### More detailed documentation to come soon. Please note that this is still a work in progress and will likely break.
