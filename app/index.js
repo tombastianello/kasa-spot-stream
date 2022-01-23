@@ -17,15 +17,11 @@ var app = express();
 var streamRunning = false;
 var getScreenshot = function () {
     if (!streamRunning) {
-        try {
-            (0, fs_1.rmSync)("thumb.jpg");
-        }
-        catch (err) {
-            console.log("Skipping thumbnail as stream is in progress.");
-        }
         console.log("Capturing thumbnail...");
-        (0, child_process_1.exec)("ffmpeg -i http://localhost:8080/video -ss 00:00:01.500 -f image2 -vframes 1 thumb.jpg").on("close", function () {
+        (0, child_process_1.exec)("ffmpeg -i http://localhost:8080/video -ss 00:00:01.500 -f image2 -vframes 1 thumb2.jpg").on("close", function () {
             console.log("Thumbnail captured.");
+            (0, fs_1.copyFileSync)("thumb2.jpg", "thumb.jpg");
+            (0, fs_1.rmSync)("thumb2.jpg");
         });
     }
     setTimeout(function () {
@@ -33,51 +29,58 @@ var getScreenshot = function () {
     }, 60 * 1000);
 };
 app.get('/video', function (req, resp) {
-    streamRunning = true;
-    var streamReq = https.request({
-        host: SPOT_IP,
-        method: "GET",
-        path: "/https/stream/mixed?video=h264&audio=g711&resolution=hd",
-        port: 19443,
-        headers: {
-            "Authorization": KASA_AUTH_HEADER
-        }
-    }, function (res) {
-        var converter = new ffmpeg_stream_1.Converter();
-        var input = converter.createInputStream({
-            f: "h264",
-            framerate: 15
-        });
-        var output = converter.createOutputStream({
-            f: "flv",
-            vcodec: "copy",
-            preset: "veryfast"
-        });
-        res.pipe(input);
-        output.pipe(resp);
-        console.log("Connected to Spot Camera at " + SPOT_IP + ", forwarding stream to ffmpeg...");
-        console.log("Streaming to client.");
-        converter.run();
-        var timeout;
-        res.on("data", function () {
-            if (timeout) {
-                clearTimeout(timeout);
+    if (!streamRunning) {
+        streamRunning = true;
+        var streamReq_1 = https.request({
+            host: SPOT_IP,
+            method: "GET",
+            path: "/https/stream/mixed?video=h264&audio=g711&resolution=hd",
+            port: 19443,
+            headers: {
+                "Authorization": KASA_AUTH_HEADER
             }
-            timeout = setTimeout(function () {
-                console.log("Stream timeout.");
+        }, function (res) {
+            var converter = new ffmpeg_stream_1.Converter();
+            var input = converter.createInputStream({
+                f: "h264",
+                framerate: 15
+            });
+            var output = converter.createOutputStream({
+                f: "flv",
+                vcodec: "copy",
+                preset: "veryfast"
+            });
+            res.pipe(input);
+            output.pipe(resp);
+            console.log("Connected to Spot Camera at " + SPOT_IP + ", forwarding stream to ffmpeg...");
+            console.log("Streaming to client.");
+            converter.run();
+            var timeout;
+            res.on("data", function () {
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+                timeout = setTimeout(function () {
+                    console.log("Stream timeout.");
+                    converter.kill();
+                    streamReq_1.destroy();
+                    streamRunning = false;
+                }, 1000);
+            });
+            req.on("close", function () {
+                console.log("Client has closed the remote connection (close).");
+                console.log("Stream ended.");
                 converter.kill();
-                streamReq.destroy();
-            }, 1000);
+                streamReq_1.destroy();
+                streamRunning = false;
+            });
         });
-        req.on("close", function () {
-            console.log("Client has closed the remote connection (close).");
-            console.log("Stream ended.");
-            converter.kill();
-            streamReq.destroy();
-            streamRunning = false;
-        });
-    });
-    streamReq.end();
+        streamReq_1.end();
+    }
+    else {
+        console.log("Stream blocked, resource busy.");
+        resp.send("Resource busy.");
+    }
 });
 app.get('/thumbnail', function (req, resp) {
     resp.header("Content-Type", "image/jpeg").send((0, fs_1.readFileSync)("./thumb.jpg"));
