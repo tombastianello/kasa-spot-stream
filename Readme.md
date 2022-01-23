@@ -26,7 +26,7 @@ Save the configuration and restart home assistant, the camera should now show up
 
 ## To-Do
 There is lots to do still, but here are the top 4:
-- I don't like the screenshot implementation so that could be improved for sure.
+- I don't like the thumbnail implementation so that could be improved for sure.
 - Add quality of life improvements to improve stability, there are lots of "crashy" scenarios at the moment.
 - Test integration with Frigate.
 - Improve issues with stream delay (I'll have to see if this is a limitation of the camera itself).
