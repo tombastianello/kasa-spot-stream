@@ -12,6 +12,8 @@ Running this application only requires 3 environment variables:
 - `KASA_PASSWORD`: Your TP-Link Kasa password.
 - `SPOT_IP`: The local network IP address of your Spot Camera.
 
+The docker image can be found in the "packages" section of this repo.
+
 ## Home Assistant Configuration
 Home assistant can be pointed at this docker image adding the following lines to your configuration file (replace anything between <>):
 ```yaml
